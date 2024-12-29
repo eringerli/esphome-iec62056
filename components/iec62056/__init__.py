@@ -18,6 +18,8 @@ CONF_BATTERY_METER = "battery_meter"
 CONF_RETRY_COUNTER_MAX = "retry_counter_max"
 CONF_RETRY_DELAY = "retry_delay"
 CONF_MODE_D = "mode_d"  # protocol mode D
+CONF_MODE_SCR = "mode_scr"
+CONF_SCR_PRECHARGE_TIME = "scr_precharge_time"
 CONF_BAUD_RATE_MAX = "baud_rate_max"
 CONF_ALLOW_COMMA = "allow_comma"
 
@@ -69,6 +71,10 @@ CONFIG_SCHEMA = cv.All(
                 CONF_RETRY_DELAY, default="15s"
             ): cv.positive_time_period_milliseconds,
             cv.Optional(CONF_MODE_D, default=False): cv.boolean,
+            cv.Optional(CONF_MODE_SCR, default=False): cv.boolean,
+            cv.Optional(
+                CONF_SCR_PRECHARGE_TIME, default="3s"
+            ): cv.positive_time_period_milliseconds,
         }
     )
     .extend(cv.COMPONENT_SCHEMA)
@@ -104,3 +110,9 @@ async def to_code(config):
 
     if CONF_MODE_D in config:
         cg.add(var.set_mode_d(config[CONF_MODE_D]))
+
+    if CONF_MODE_SCR in config:
+        cg.add(var.set_mode_scr(config[CONF_MODE_SCR]))
+
+    if CONF_SCR_PRECHARGE_TIME in config:
+        cg.add(var.set_scr_precharge_ms(config[CONF_SCR_PRECHARGE_TIME]))

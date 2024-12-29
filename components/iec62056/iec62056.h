@@ -32,6 +32,7 @@ enum CommState {
   BATTERY_WAKEUP,
   MODE_D_WAIT,
   MODE_D_READOUT,
+  MODE_SCR_PRECHARGE,
 };
 
 /// @brief Protocol types
@@ -65,6 +66,8 @@ class IEC62056Component : public Component, public uart::UARTDevice {
   /// @brief Called when switch state changed. Begins readout.
   void trigger_readout();
   void set_mode_d(bool flag) { force_mode_d_ = flag; }
+  void set_mode_scr(bool flag) { mode_scr_ = flag; }
+  void set_scr_precharge_ms(uint32_t val) { scr_precharge_time_ms_ = val; }
 
  protected:
   bool parse_line_(const char *line, std::string &out_obis, std::string &out_value1, std::string &out_value2);
@@ -214,6 +217,10 @@ class IEC62056Component : public Component, public uart::UARTDevice {
   std::unique_ptr<IEC62056UART> iuart_;
   /// @brief Indicates unidirectional communication, mode D
   bool force_mode_d_;
+  /// @brief Indicates mode SCR
+  bool mode_scr_;
+  /// @brief SCR precharge time in ms
+  uint32_t scr_precharge_time_ms_;
 };
 
 }  // namespace iec62056

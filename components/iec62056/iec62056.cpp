@@ -66,6 +66,7 @@ void IEC62056Component::dump_config() {
     ESP_LOGCONFIG(TAG, "  Retry delay: %.3fs", this->retry_delay_ / 1000.0f);
   }
   ESP_LOGCONFIG(TAG, "  Mode D: %s", YESNO(this->force_mode_d_));
+  ESP_LOGCONFIG(TAG, "  Mode SCR: %s", YESNO(this->mode_scr_));
 
   ESP_LOGCONFIG(TAG, "  Sensors:");
   for (const auto &item : sensors_) {
@@ -360,14 +361,24 @@ void IEC62056Component::loop() {
       update_connection_start_timestamp_();
       connection_status_(true);
 
-      if (battery_meter_) {
-        set_next_state_(BATTERY_WAKEUP);
+      if (mode_scr_) {
+        set_next_state_(MODE_SCR_PRECHARGE);
       } else {
-        set_next_state_(SEND_REQUEST);
+        if (battery_meter_) {
+          set_next_state_(BATTERY_WAKEUP);
+        } else {
+          set_next_state_(SEND_REQUEST);
+        }
       }
+
       update_baudrate_(300);  // make sure we start with 300 bps
 
       update_last_transmission_from_meter_timestamp_();
+      break;
+
+    case MODE_SCR_PRECHARGE:
+      iuart_->load_settings();
+      wait_(scr_precharge_time_ms_, SEND_REQUEST);
       break;
 
     case BATTERY_WAKEUP:
@@ -748,6 +759,9 @@ void IEC62056Component::wait_(uint32_t ms, CommState state) {
 
 const char *IEC62056Component::state2txt_(CommState state) {
   switch (state) {
+    case MODE_SCR_PRECHARGE:
+      return "MODE_SCR_PRECHARGE";
+
     case BATTERY_WAKEUP:
       return "BATTERY_WAKEUP";
 
@@ -849,6 +863,10 @@ void IEC62056Component::wait_next_readout_() {
     // just wait
     ESP_LOGD(TAG, "No scheduled readout. Use switch to trigger readout.");
     set_next_state_(INFINITE_WAIT);
+  }
+
+  if (mode_scr_) {
+    digitalWrite(7, LOW);
   }
 }
 
